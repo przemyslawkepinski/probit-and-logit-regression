@@ -1,0 +1,526 @@
+
+install.packages("dplyr")
+install.packages("readr")
+install.packages("ggplot2")
+install.packages("DescTools")
+
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(lmtest)
+library(MASS)
+library(DescTools)
+library(pscl)
+library(erer)
+library(titanic)
+
+setwd("D:\\WNE\\I rok Magisterka\\Zaawansowana Ekonometria I\\projekt_ZA1")
+dane = read.csv("datacovid.csv", sep = ",", header = TRUE)
+dane2 = read.csv("responses.csv", sep = ",", header = TRUE) 
+
+head(dane)
+summary(dane$Rating.of.Online.Class.experience)
+glimpse(dane)
+table(dane$Change.in.your.weight)
+
+#zmiana nazwy kolumny
+dane = dane %>%
+  rename(rating=Rating.of.Online.Class.experience)
+
+dane = dane %>%
+  rename(age=Age.of.Subject)
+
+dane = dane %>%
+  rename(medium=Medium.for.online.class)
+
+dane = dane %>%
+  rename(region=Region.of.residence)
+
+dane = dane %>%
+  rename(time_class=Time.spent.on.Online.Class)
+
+dane = dane %>%
+  rename(time_study=Time.spent.on.self.study)
+
+dane = dane %>%
+  rename(time_sleep=Time.spent.on.sleep)
+
+dane = dane %>%
+  rename(time_sm=Time.spent.on.social.media)
+
+dane = dane %>%
+  rename(change_weight=Change.in.your.weight)
+
+dane = dane %>%
+  rename(health_issue=Health.issue.during.lockdown)
+
+dane = dane %>%
+  rename(time_utilized=Time.utilized)
+
+dane = dane %>%
+  rename(time_fitness=Time.spent.on.fitness)
+
+dane = dane %>%
+  rename(time_tv=Time.spent.on.TV)
+
+dane = dane %>%
+  rename(social_connection=Do.you.find.yourself.more.connected.with.your.family..close.friends...relatives...)
+
+#sprawdzam braki w danych i zamieniam na najczesciej wystepujace
+colSums(is.na(dane)) %>% 
+  sort()
+
+table(dane$rating, useNA = "ifany")
+dane$rating[is.na(dane$rating)] <- "Very poor"
+any(is.na(dane$rating))
+table(dane$rating)
+summary(dane$rating)
+
+table(dane$medium, useNA = "ifany")
+dane$medium[is.na(dane$medium)] <- "Laptop/Desktop"
+any(is.na(dane$medium))
+summary(dane$medium)
+
+dane$medium[dane$medium == "Any Gadget"] <- "Smartphone"
+table(dane$medium)
+
+dane$medium[dane$medium == "Smartphone or Laptop/Desktop"] <- "Smartphone"
+table(dane$medium)
+
+#przygotowanie zmiennej rating
+
+dane$rating <- factor(dane$rating,
+                           levels = c("Very poor",
+                                      "Poor",
+                                      "Average",
+                                      "Good",
+                                      "Excellent"),
+                           ordered = TRUE) 
+
+# lets check the table of frequencies now
+table(dane$rating)
+levels(dane$rating)
+glimpse(dane$rating)
+is.na(dane$rating)
+summary(dane$rating)
+
+#przygotowanie zmiennej region
+# 1 w Delhi
+# 2 poza Delhi
+
+#dane$region <- factor(dane$region,
+#                      levels = c("Delhi-NCR",
+#                                 "Outside Delhi-NCR"),
+#                      ordered = TRUE) 
+
+dane$region <- as.factor(dane$region)
+table(dane$region)
+levels(dane$region)
+glimpse(dane$region)
+
+
+#przygotowanie zmiennej health_issue
+# 1 NO
+# 2 YES
+
+dane$health_issue <- as.factor(dane$health_issue)
+table(dane$health_issue)
+levels(dane$health_issue)
+glimpse(dane$health_issue)
+
+#przygotowanie zmiennej time_utilized
+# 1 NO
+# 2 YES
+
+dane$time_utilized <- as.factor(dane$time_utilized)
+table(dane$time_utilized)
+levels(dane$time_utilized)
+glimpse(dane$time_utilized)
+
+#przygotowanie zmiennej medium
+# 1 laptop
+# 2 smartphone
+# 3 teblet
+
+dane$medium <- as.factor(dane$medium)
+table(dane$medium)
+levels(dane$medium)
+glimpse(dane$medium)
+
+#przygotowanie zmiennej change_weight
+# 1 decreased
+# 2 constant
+# 3 increased
+
+dane$change_weight <- factor(dane$change_weight,
+                      levels = c("Decreased",
+                                 "Remain Constant",
+                                 "Increased"),
+                      ordered = TRUE) 
+
+table(dane$change_weight)
+levels(dane$change_weight)
+glimpse(dane$change_weight)
+
+#przygotowanie zmiennej social_connection
+# 1 NO
+# 2 YES
+
+dane$social_connection <- as.factor(dane$social_connection)
+table(dane$social_connection)
+levels(dane$social_connection)
+glimpse(dane$social_connection)
+
+###  analiza zmiennych ciaglych  ###
+summary(dane$time_class)
+sd(dane$time_class)
+hist(dane$time_class)
+hist(dane$logtime_class)
+ggplot(data = dane)+
+  geom_histogram(mapping = aes(x = time_class),binwidth = 0.5 ,color = "black", fill = "blue")
+
+ggplot(data = dane)+
+  geom_histogram(mapping = aes(x = logtime_class),binwidth = 0.3 ,color = "black", fill = "blue")
+
+summary(dane$time_sleep)
+sd(dane$time_sleep)
+hist(dane$time_sleep)
+hist(dane$logtime_sleep)
+ggplot(data = dane)+
+  geom_histogram(mapping = aes(x = time_sleep),binwidth = 1 ,color = "black", fill = "blue")
+
+ggplot(data = dane)+
+  geom_histogram(mapping = aes(x = logtime_sleep),binwidth = 0.1 ,color = "black", fill = "blue")
+
+summary(dane$time_sm)
+sd(dane$time_sm)
+hist(dane$time_sm)
+hist(dane$logtime_sm)
+ggplot(data = dane)+
+  geom_histogram(mapping = aes(x = time_sm),binwidth = 1 ,color = "black", fill = "blue")
+
+ggplot(data = dane)+
+  geom_histogram(mapping = aes(x = logtime_sm),binwidth = 0.2 ,color = "black", fill = "blue")
+
+summary(dane$time_study)
+sd(dane$time_study)
+table(dane$time_study)
+hist(dane$time_study)
+hist(dane$logtime_study)
+ggplot(data = dane)+
+  geom_histogram(mapping = aes(x = time_study),binwidth = 1 ,color = "black", fill = "blue")
+
+ggplot(data = dane)+
+  geom_histogram(mapping = aes(x = logtime_study),binwidth = 0.2 ,color = "black", fill = "blue")
+
+summary(dane$age)
+table(dane$age)
+hist(dane$age)
+
+summary(dane$time_fitness)
+sd(dane$time_fitness)
+hist(dane$time_fitness)
+ggplot(data = dane)+
+  geom_histogram(mapping = aes(x = time_fitness),binwidth = 0.5 ,color = "black", fill = "blue")
+
+ggplot(data = dane)+
+  geom_histogram(mapping = aes(x = logtime_fitness),binwidth = 0.2 ,color = "black", fill = "blue")
+
+### logarytm zmiennych ciaglych +1
+
+dane$logtime_class<- log(dane$time_class+1)
+dane$logtime_sleep<- log(dane$time_sleep+1)
+dane$logtime_sm<- log(dane$time_sm+1)
+dane$logtime_study<- log(dane$time_study+1)
+dane$logtime_fitness<- log(dane$time_fitness+1)
+
+################################
+# ORDINARY LOGISTIC REGRESSION #
+################################
+
+### wszystkie zmienne ###
+#AIC: 3059.271
+
+reg1 <- polr(rating ~ region + medium + time_class 
+             + social_connection + time_sleep + time_sm 
+             + time_utilized + health_issue + change_weight + time_fitness, 
+             data = dane, Hess=TRUE, method = "logistic")
+summary(reg1)
+# doliczenie p-value
+ctable <- coef(summary(reg1))
+reg1p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = reg1p))
+logLik(reg1)
+
+#efekty czastkowe
+ocME(reg1)
+
+pR2(reg1)
+PseudoR2(reg1, which = c("CoxSnell","Nagelkerke","McFadden"))
+
+# odds
+exp(coef(reg1))
+
+### usuwam nieistotne ###
+#AIC: 3056.638
+
+reg11 <- polr(rating ~ time_class 
+             + social_connection + time_sleep + time_sm 
+             + time_utilized + health_issue + change_weight, 
+             data = dane, Hess=TRUE, method = "logistic")
+summary(reg11)
+# doliczenie p-value
+ctable <- coef(summary(reg11))
+reg11p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = reg11p))
+logLik(reg11)
+
+#efekty czastkowe
+ocME(reg11)
+
+#pseudo R^2
+pR2(reg11)
+
+# odds
+exp(coef(reg11))
+
+### usuwam malo istotne - change_weight ###
+#AIC: 3056.75 
+
+reg11w <- polr(rating ~ time_class 
+              + social_connection + time_sleep + time_sm 
+              + time_utilized + health_issue, 
+              data = dane, Hess=TRUE, method = "logistic")
+summary(reg11w)
+# doliczenie p-value
+ctable <- coef(summary(reg11w))
+reg11wp <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = reg11wp))
+logLik(reg11w)
+
+#efekty czastkowe
+ocME(reg11w)
+
+#pseudo R^2
+pR2(reg11w)
+
+# odds
+exp(coef(reg11w))
+
+###################################
+### LOGIT zmienne z logarytmem ###
+###################################
+
+
+
+### wszystkie zmienne ###
+#AIC: 3046.423 
+
+lreg1 <- polr(rating ~ region + medium + logtime_class 
+              + social_connection + logtime_sleep + logtime_sm 
+              + time_utilized + health_issue + change_weight + logtime_fitness + logtime_study, 
+              data = dane, Hess=TRUE, method = "logistic")
+summary(lreg1)
+
+# doliczenie p-value
+ctable <- coef(summary(lreg1))
+lreg1p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = lreg1p))
+logLik(lreg1)
+
+#efekty czastkowe
+ocME(lreg1)
+
+#pseudo R^2
+pR2(lreg1)
+
+# odds
+exp(coef(lreg1))
+
+### usuwam nieistotne ###
+#AIC: 3043.498
+
+lreg11 <- polr(rating ~ logtime_class 
+              + social_connection + logtime_sleep + logtime_sm 
+              + time_utilized + health_issue + change_weight, 
+              data = dane, Hess=TRUE, method = "logistic")
+summary(lreg11)
+# doliczenie p-value
+ctable <- coef(summary(lreg11))
+lreg11p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = lreg11p))
+logLik(lreg11)
+
+#efekty czastkowe
+ocME(lreg11)
+
+#pseudo R^2
+pR2(lreg11)
+
+# odds
+exp(coef(lreg11))
+
+### usuwam malo istotne - change_weight ###
+#AIC: 3043.734 
+
+lreg11w <- polr(rating ~ logtime_class 
+               + social_connection + logtime_sleep + logtime_sm 
+               + time_utilized + health_issue, 
+               data = dane, Hess=TRUE, method = "logistic")
+summary(lreg11w)
+# doliczenie p-value
+ctable <- coef(summary(lreg11w))
+lreg11wp <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = lreg11wp))
+logLik(lreg11w)
+
+#efekty czastkowe
+ocME(lreg11w)
+
+#pseudo R^2
+pR2(lreg11w)
+
+# odds
+exp(coef(lreg11w))
+
+lrtest(reg1, lreg1)
+#zdecydowanie model lreg1
+
+###############################
+#  ORDERED PROBIT REGRESSION  #
+###############################
+
+### wszystkie zmienne ###
+#AIC: 3052.78 
+
+reg2 <- polr(rating ~ region + medium + time_class 
+             + social_connection + time_sleep + time_sm 
+             + time_utilized + health_issue + change_weight + time_fitness, 
+             data = dane, Hess=TRUE, method = "probit")
+summary(reg2)
+
+# doliczenie p-value
+ctable <- coef(summary(reg2))
+reg2p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = reg2p))
+logLik(reg2)
+
+#efekty czastkowe
+ocME(reg2)
+
+#pseudo R^2
+pR2(reg2)
+
+### usuwam nieistotne ###
+#AIC: 3050.858 
+
+reg22 <- polr(rating ~ time_class + medium 
+              + social_connection + time_sleep + time_sm 
+              + time_utilized + health_issue + change_weight, 
+              data = dane, Hess=TRUE, method = "probit")
+summary(reg22)
+# doliczenie p-value
+ctable <- coef(summary(reg22))
+reg22p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = reg22p))
+logLik(reg22)
+
+#efekty czastkowe
+ocME(reg22)
+
+#pseudo R^2
+pR2(reg22)
+
+### usuwam nieistotne - medium i change_weight ###
+#AIC: 3050.074 
+
+reg22mw <- polr(rating ~ time_class 
+              + social_connection + time_sleep + time_sm 
+              + time_utilized + health_issue, 
+              data = dane, Hess=TRUE, method = "probit")
+summary(reg22mw)
+# doliczenie p-value
+ctable <- coef(summary(reg22mw))
+reg22mwp <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = reg22mwp))
+logLik(reg22mw)
+
+#efekty czastkowe
+ocME(reg22mw)
+ 
+#pseudo R^2
+pR2(reg22mw)
+
+###################################
+### PROGIT zmienne z logarytmem ###
+###################################
+
+### wszystkie zmienne ###
+#AIC: 3040.633
+
+lreg2 <- polr(rating ~ region + medium + logtime_class 
+             + social_connection + logtime_sleep + logtime_sm 
+             + time_utilized + health_issue + change_weight + time_fitness, 
+             data = dane, Hess=TRUE, method = "probit")
+summary(lreg2)
+
+# doliczenie p-value
+ctable <- coef(summary(lreg2))
+lreg2p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = lreg2p))
+logLik(lreg2)
+
+#efekty czastkowe
+ocME(lreg2)
+
+#pseudo R^2
+pR2(lreg2)
+
+### usuwam nieistotne ###
+#AIC: 3038.141
+
+lreg22 <- polr(rating ~ logtime_class
+              + social_connection + logtime_sleep + logtime_sm 
+              + time_utilized + health_issue + change_weight, 
+              data = dane, Hess=TRUE, method = "probit")
+summary(lreg22)
+# doliczenie p-value
+ctable <- coef(summary(lreg22))
+lreg22p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = lreg22p))
+logLik(lreg22)
+
+#efekty czastkowe
+ocME(lreg22)
+
+#pseudo R^2
+pR2(lreg22)
+
+### usuwam nieistotne - change_weight ###
+#AIC: 3037.508
+
+lreg22mw <- polr(rating ~ logtime_class
+               + social_connection + logtime_sleep + logtime_sm 
+               + time_utilized + health_issue, 
+               data = dane, Hess=TRUE, method = "probit")
+summary(lreg22mw)
+# doliczenie p-value
+ctable <- coef(summary(lreg22mw))
+lreg22pmw <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = lreg22pmw))
+logLik(lreg22mw)
+
+#efekty czastkowe
+ocME(lreg22mw)
+
+#pseudo R^2
+pR2(lreg22mw)
+
+lrtest(reg2, lreg2)
+#zdecydowanie model lreg2
+
+lrtest(lreg1)
+
+
+AIC(lreg1, lreg11, lreg11w, lreg2, lreg22, lreg22mw)
+BIC(lreg1, lreg11, lreg11w, lreg2, lreg22, lreg22mw)
